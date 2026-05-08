@@ -344,8 +344,12 @@ namespace Firefly
 		/// </summary>
 		public void DestroyCommandBuffer()
 		{
+			if (fxVessel.commandBuffer == null) return;
+
 			CameraManager.Instance.RemoveCommandBuffer(CameraEvent.AfterForwardAlpha, fxVessel.commandBuffer);
 			fxVessel.commandBuffer.Dispose();
+
+			fxVessel.commandBuffer = null;
 		}
 
 		/// <summary>
@@ -648,6 +652,7 @@ namespace Firefly
 			// cant remove the fx is they are unloaded
 			// however there are edge cases where this needs to be triggered while the fx are unloaded, so allow to force it
 			if (!isLoaded && !force) return;
+			if (fxVessel == null) return;
 
 			isLoaded = false;
 
