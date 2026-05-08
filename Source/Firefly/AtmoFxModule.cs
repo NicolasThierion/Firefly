@@ -384,6 +384,7 @@ namespace Firefly
 		/// </summary>
 		void CreatePartEnvelope(Part part)
 		{
+			// look for defined fx envelopes
 			Transform[] fxEnvelopes = part.FindModelTransforms("atmofx_envelope");
 			if (fxEnvelopes.Length < 1) fxEnvelopes = Utils.FindTaggedTransforms(part);
 
@@ -399,8 +400,6 @@ namespace Firefly
 					if (!fxEnvelopes[j].TryGetComponent(out MeshFilter _)) continue;
 					if (!fxEnvelopes[j].TryGetComponent(out MeshRenderer parentRenderer)) continue;
 
-					parentRenderer.enabled = false;
-
 					// create the envelope
 					FxEnvelopeModel envelope = new FxEnvelopeModel(
 						Utils.GetPartCfgName(part.partInfo.name),
@@ -409,15 +408,17 @@ namespace Firefly
 						Vector3.one
 						);
 					fxVessel.fxEnvelope.Add(envelope);
-				}
+
+					// disable the envelope model itself, since it's only used in the CB
+                    fxEnvelopes[j].gameObject.SetActive(false);
+                }
 
 				// skip model search
 				return;
 			}
 
-			// TODO: reminder that collider support is disabled for commandbuffer branch
-
-			List<Renderer> models = part.FindModelRenderersCached();
+            // if there are no defined envelopes, look for models to use as envelopes
+            List<Renderer> models = part.FindModelRenderersCached();
 			for (int j = 0; j < models.Count; j++)
 			{
 				Renderer model = models[j];
