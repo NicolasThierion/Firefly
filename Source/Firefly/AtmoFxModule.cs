@@ -339,9 +339,6 @@ namespace Firefly
 			Logging.Log("Commandbuffer populated.");
 		}
 
-		/// <summary>
-		/// Destroys and disposes the command buffer
-		/// </summary>
 		public void DestroyCommandBuffer()
 		{
 			if (fxVessel.commandBuffer == null) return;
@@ -352,9 +349,6 @@ namespace Firefly
 			fxVessel.commandBuffer = null;
 		}
 
-		/// <summary>
-		/// Resets the commandbuffer (destroys, inits and populates it)
-		/// </summary>
 		public void ReloadCommandBuffer()
 		{
 			if (fxVessel.commandBuffer == null)
@@ -363,14 +357,12 @@ namespace Firefly
 				return;
 			}
 
+			// destroy, reinint and populate
 			DestroyCommandBuffer();
 			InitializeCommandBuffer();
 			PopulateCommandBuffer();
 		}
 
-		/// <summary>
-		/// Resets the model renderer cache for each part
-		/// </summary>
 		void ResetPartModelCache()
 		{
 			for (int i = 0; i < vessel.parts.Count; i++)
@@ -380,9 +372,36 @@ namespace Firefly
 		}
 
 		/// <summary>
-		/// Processes one part and creates the envelope mesh for it
+		/// Loops over every part and destroys the MeshRenderer of custom defined envelopes
+		/// The meshfilters are left intact, since they actually store the mesh used for effect creation
+		/// This method is called when the vessel module is loaded, not when effects are initialized, 
+		/// to make sure the envelopes are gone even when effects are unloaded
 		/// </summary>
-		void CreatePartEnvelope(Part part)
+        void CleanupEnvelopeRenderers()
+        {
+			for (int i = 0; i < vessel.parts.Count; i++)
+			{
+				Part part = vessel.parts[i];
+
+				Transform[] fxEnvelopes = part.FindModelTransforms("atmofx_envelope");
+				if (fxEnvelopes.Length < 1) fxEnvelopes = Utils.FindTaggedTransforms(part);
+				if (fxEnvelopes.Length < 1) return;
+
+				for (int j = 0; j < fxEnvelopes.Length; j++)
+				{
+					if (!fxEnvelopes[j].gameObject.activeInHierarchy) continue;
+					if (!fxEnvelopes[j].TryGetComponent(out MeshFilter _)) continue;
+					if (!fxEnvelopes[j].TryGetComponent(out MeshRenderer parentRenderer)) continue;
+
+					Destroy(parentRenderer);
+                }
+			}
+        }
+
+        /// <summary>
+        /// Processes one part and creates the envelope mesh for it
+        /// </summary>
+        void CreatePartEnvelope(Part part)
 		{
 			// look for defined fx envelopes
 			Transform[] fxEnvelopes = part.FindModelTransforms("atmofx_envelope");
@@ -408,9 +427,6 @@ namespace Firefly
 						Vector3.one
 						);
 					fxVessel.fxEnvelope.Add(envelope);
-
-					// disable the envelope model itself, since it's only used in the CB
-                    fxEnvelopes[j].gameObject.SetActive(false);
                 }
 
 				// skip model search
@@ -691,10 +707,10 @@ namespace Firefly
 			Logging.Log("Unloaded vessel " + vessel.vesselName);
 		}
 
-		/// <summary>
-		/// Reloads the vessel (simulates unloading and loading again)
-		/// </summary>
-		public void ReloadVessel()
+        /// <summary>
+        /// Reloads the vessel (simulates unloading and loading again)
+        /// </summary>
+        public void ReloadVessel()
 		{
 			RemoveVesselFx(false);
 			reloadDelayFrames = Math.Max(reloadDelayFrames, 1);
@@ -713,6 +729,9 @@ namespace Firefly
 		public override void OnLoadVessel()
 		{
 			base.OnLoadVessel();
+
+			// removes the renderers from the custom defined envelopes, since they are not needed and sometimes produce weird issues
+			CleanupEnvelopeRenderers();
 
 			reloadDelayFrames = 20;
 		}

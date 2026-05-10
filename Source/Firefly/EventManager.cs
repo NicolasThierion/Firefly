@@ -32,7 +32,7 @@ namespace Firefly
 
 			// only trigger event if the vessel still has any parts
 			if (module != null && vessel.parts.Count > 0) module.OnVesselPartCountChanged();
-			else Logging.Log("FX instance not registered");
+			else Logging.Log("FX instance not registered or vessel has no parts");
 		}
 
 		/// <summary>
