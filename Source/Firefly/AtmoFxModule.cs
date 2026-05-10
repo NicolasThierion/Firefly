@@ -393,7 +393,7 @@ namespace Firefly
 					if (!fxEnvelopes[j].TryGetComponent(out MeshFilter _)) continue;
 					if (!fxEnvelopes[j].TryGetComponent(out MeshRenderer parentRenderer)) continue;
 
-					Destroy(parentRenderer);
+					parentRenderer.enabled = false;
                 }
 			}
         }
